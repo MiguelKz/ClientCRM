@@ -39,7 +39,10 @@ const App = (() => {
   }
 
   function init() {
-    if (Store.isEmpty() && typeof Seed !== 'undefined') Seed.load();
+    /* No primeiro acesso, carrega dados de exemplo para demonstração */
+    let primeiroAcesso = false;
+    try { primeiroAcesso = !localStorage.getItem('clientcrm:iniciado'); localStorage.setItem('clientcrm:iniciado', '1'); } catch {}
+    if (primeiroAcesso && Store.isEmpty() && typeof Seed !== 'undefined') Seed.load();
     buildNav();
     window.addEventListener('hashchange', render);
     Store.onChange(() => { if (!document.querySelector('.modal-backdrop')) render(); else App.dirty = true; });
@@ -52,6 +55,16 @@ const App = (() => {
     document.getElementById('btn-export').onclick = exportData;
     document.getElementById('btn-import').onclick = () => document.getElementById('file-import').click();
     document.getElementById('file-import').onchange = importData;
+    document.getElementById('btn-seed').onclick = () => {
+      const m = UI.modal('Dados de exemplo', `<p>Substituir todos os dados atuais pelos dados de exemplo?</p>
+        <div class="form-actions"><button class="btn ghost" data-close>Cancelar</button>
+        <button class="btn primary" id="seed-yes">Carregar exemplo</button></div>`);
+      m.querySelector('#seed-yes').onclick = () => { UI.closeModal(); Seed.load(); UI.toast('Dados de exemplo carregados'); };
+    };
+    document.getElementById('btn-clear').onclick = () =>
+      UI.confirm('Apagar TODOS os clientes, atendimentos e oportunidades? Exporte um backup antes se quiser guardar.', () => {
+        Store.reset(); UI.toast('Dados apagados');
+      });
     render();
   }
 
